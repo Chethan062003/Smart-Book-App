@@ -23,7 +23,7 @@ export default function Dashboard() {
         setUser(data.user);
         fetchBookmarks(data.user.id);
 
-        // 🔥 REALTIME SUBSCRIPTION
+        // ✅ REALTIME SUBSCRIPTION WITH FILTER
         channel = supabase
           .channel("bookmarks-changes")
           .on(
@@ -32,6 +32,7 @@ export default function Dashboard() {
               event: "*",
               schema: "public",
               table: "bookmarks",
+              filter: `user_id=eq.${data.user.id}`,
             },
             () => {
               fetchBookmarks(data.user.id);
@@ -43,7 +44,6 @@ export default function Dashboard() {
 
     init();
 
-    // Cleanup subscription when component unmounts
     return () => {
       if (channel) {
         supabase.removeChannel(channel);
@@ -132,7 +132,7 @@ export default function Dashboard() {
               href={bookmark.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600"
+              className="text-blue-600 hover:underline"
             >
               {bookmark.title}
             </a>

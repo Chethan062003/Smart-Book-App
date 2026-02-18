@@ -13,22 +13,22 @@ export default function Dashboard() {
 
   useEffect(() => {
     let channel: any;
-
-    const setup = async () => {
+  
+    const initialize = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-
+  
       if (!session) {
         router.push("/");
         return;
       }
-
+  
       const currentUser = session.user;
       setUser(currentUser);
       fetchBookmarks(currentUser.id);
-
-      // ✅ PRODUCTION-SAFE REALTIME SUBSCRIPTION
+  
+      // Subscribe AFTER session confirmed
       channel = supabase
         .channel("bookmarks-changes")
         .on(
@@ -43,19 +43,28 @@ export default function Dashboard() {
             fetchBookmarks(currentUser.id);
           }
         )
-        .subscribe((status) => {
-          console.log("Realtime status:", status);
-        });
+        .subscribe();
     };
-
-    setup();
-
+  
+    // Listen to auth state change (IMPORTANT FOR PRODUCTION)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        initialize();
+      }
+    });
+  
+    // Also try immediately
+    initialize();
+  
     return () => {
       if (channel) {
         supabase.removeChannel(channel);
       }
+      subscription.unsubscribe();
     };
-  }, [router]);
+  }, [router]);  
 
   const fetchBookmarks = async (userId: string) => {
     const { data } = await supabase

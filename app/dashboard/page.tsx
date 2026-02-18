@@ -14,35 +14,41 @@ export default function Dashboard() {
   useEffect(() => {
     let channel: any;
 
-    const init = async () => {
-      const { data } = await supabase.auth.getUser();
+    const setup = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (!data.user) {
+      if (!session) {
         router.push("/");
-      } else {
-        setUser(data.user);
-        fetchBookmarks(data.user.id);
-
-        // ✅ REALTIME SUBSCRIPTION WITH FILTER
-        channel = supabase
-          .channel("bookmarks-changes")
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "bookmarks",
-              filter: `user_id=eq.${data.user.id}`,
-            },
-            () => {
-              fetchBookmarks(data.user.id);
-            }
-          )
-          .subscribe();
+        return;
       }
+
+      const currentUser = session.user;
+      setUser(currentUser);
+      fetchBookmarks(currentUser.id);
+
+      // ✅ PRODUCTION-SAFE REALTIME SUBSCRIPTION
+      channel = supabase
+        .channel("bookmarks-changes")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "bookmarks",
+            filter: `user_id=eq.${currentUser.id}`,
+          },
+          () => {
+            fetchBookmarks(currentUser.id);
+          }
+        )
+        .subscribe((status) => {
+          console.log("Realtime status:", status);
+        });
     };
 
-    init();
+    setup();
 
     return () => {
       if (channel) {

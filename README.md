@@ -30,11 +30,125 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+# 🔖 Smart Bookmark App
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+A full-stack bookmark manager built using **Next.js (App Router)**, **Supabase**, and **Tailwind CSS**.  
+Users can log in with Google, add bookmarks, delete them, and see real-time updates across tabs.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-=======
-# Smart-Book-App
->>>>>>> 9bb0d507165e7752d4946b0601925fb21fad1a26
+---
+
+## 🚀 Live Demo
+
+🔗 https://smart-book-app-3m73.vercel.app/
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** Next.js (App Router), TypeScript
+- **Styling:** Tailwind CSS
+- **Backend & Database:** Supabase (PostgreSQL)
+- **Authentication:** Google OAuth (Supabase Auth)
+- **Security:** Row Level Security (RLS)
+- **Deployment:** Vercel
+
+---
+
+## ✨ Features
+
+- 🔐 Google OAuth Login
+- ➕ Add bookmarks (title + URL)
+- ❌ Delete bookmarks
+- 👤 Private bookmarks per user
+- 🔄 Real-time updates across tabs (Supabase Realtime)
+- 🌐 Deployed to production (Vercel)
+
+---
+
+## 🔒 Database Security
+
+Row Level Security (RLS) is enabled on the `bookmarks` table.
+
+Policies ensure:
+
+- Users can only view their own bookmarks
+- Users can only insert their own bookmarks
+- Users can only delete their own bookmarks
+
+This ensures complete data isolation between users.
+
+---
+
+## ⚡ Real-Time Implementation
+
+Real-time updates are implemented using Supabase `postgres_changes` subscription:
+
+```ts
+.channel("bookmarks-changes")
+.on("postgres_changes", ...)
+.subscribe()
+
+
+ Problems Faced & How I Solved Them
+1️ OAuth Redirect Issues (Production)
+
+Problem:
+After deploying to Vercel, Google login was stuck or redirecting incorrectly.
+
+Solution:
+Updated Supabase → Authentication → URL Configuration:
+
+Set correct Site URL
+
+Added correct Redirect URL
+
+Ensured redirect used:
+
+redirectTo: `${window.location.origin}/dashboard`
+
+2️ Environment Variables Not Working in Production
+
+Problem:
+Supabase URL and key were undefined in production.
+
+Solution:
+Added environment variables in Vercel:
+
+NEXT_PUBLIC_SUPABASE_URL
+
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+Then redeployed the project.
+
+3️ Row Level Security Blocking Queries
+
+Problem:
+After enabling RLS, inserts/selects failed.
+
+Solution:
+Created proper RLS policies:
+
+SELECT policy
+
+INSERT policy
+
+DELETE policy
+
+Each policy checks:
+
+auth.uid() = user_id
+
+4️ Real-Time Not Working in Production
+
+Problem:
+Realtime worked locally but not consistently in Vercel.
+
+Solution:
+
+Ensured bookmarks table was added to supabase_realtime publication
+
+Used filtered subscription:
+
+filter: `user_id=eq.${currentUser.id}`
+
+
+Ensured session was loaded before subscribing
